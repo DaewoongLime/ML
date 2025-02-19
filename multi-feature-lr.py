@@ -1,49 +1,130 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import math
 import csv
 
-hours = []
-grades = []
+ITERATIONS = 50000  # Reduce iterations for efficiency
+ALPHA = 0.001
+TOLERANCE = 1e-6  # Stop if gradient updates are very small
 
-# get data from training set
-with open('training_set.csv', newline='') as csvfile:
+x = []
+y = []
+
+# --------------- Load training data ---------------
+with open('real_estate_prices.csv', newline='') as csvfile:
     reader = csv.reader(csvfile)
-    next(reader) # skip header
+    next(reader)  # Skip header
     for row in reader:
-        hours.append(float(row[0]))
-        grades.append(float(row[1]))
+        x.append(np.array(row[:-1], dtype=float))
+        y.append(float(row[-1]))
 
-#convert data into np arrays
-hours = np.array(hours)
-grades = np.array(grades)
-n = len(hours) # number of rows
+# Convert to NumPy arrays
+X_train = np.array(x)
+Y_train = np.array(y)  # Target values
 
-# hypothesis function
-def f(x, w = 0, b = 0): 
-    return w * x + b
+# --------------- Feature Scaling ---------------
+def scaling(X):
+    mean = np.mean(X, axis=0)  # Compute mean for each feature
+    std = np.std(X, axis=0)  # Compute standard deviation for each feature
+    std[std == 0] = 1  # Avoid division by zero
 
-# cost function
-def c(w, b):
-    return np.sum((f(hours, w, b) - grades) ** 2)
+    X_standardized = (X - mean) / std
+    return X_standardized, mean, std  # Return mean & std for later use
 
-def grad_desc(w, b, a = 0.01):
-    for _ in range(10000):
-        tmp = f(hours, w, b) - grades
-        tmpw = np.mean(tmp * hours)
-        tmpb = np.mean(tmp)
+# Scale features
+X_scaled, mean, std = scaling(X_train)
 
-        w -= a * tmpw
-        b -= a * tmpb
+# Scale target values
+y_mean = np.mean(Y_train)
+y_std = np.std(Y_train)
+Y_train = (Y_train - y_mean) / y_std  # Standardize target values
+# -------------------------------------------------
 
-        if abs(tmpw) < 0.000001 and abs(tmpb) < 0.000001:
+# --------------- Hypothesis function ---------------
+def f(X, w, b): 
+    return np.dot(X, w) + b  
+# ---------------------------------------------------
+
+# --------------- Cost function (Mean Squared Error) ---------------
+def c(X, y, w, b):
+    return np.sum((f(X, w, b) - y) ** 2) / (2 * len(y))
+# ------------------------------------------------------------------
+
+# --------------- Compute Gradients ---------------
+def calc_grad(X, y, w, b):
+    m = len(y)
+    err = f(X, w, b) - y  # Error
+
+    dj_dw = np.dot(X.T, err) / m
+    dj_db = np.mean(err)
+
+    return dj_dw, dj_db
+# -------------------------------------------------
+
+# --------------- Gradient Descent with Early Stopping ---------------
+def grad_desc(X, y, w, b):
+    cost_history = []  # Store cost values for debugging
+
+    for i in range(ITERATIONS):
+        dj_dw, dj_db = calc_grad(X, y, w, b)
+
+        # Early stopping if gradients are too small
+        if np.linalg.norm(dj_dw) < TOLERANCE and abs(dj_db) < TOLERANCE:
+            print(f"Stopping early at iteration {i} due to small updates")
             break
-    return w,b
 
-w, b = grad_desc(0,0)
-x = math.floor(min(hours))
-y = math.ceil(max(hours))
-plt.plot(hours, grades, 'o')
-plt.plot([x, y], [f(x, w, b), f(y, w, b)])
-plt.show()
-print("f(x) : %sx + %s" % (round(w,3), round(b,3)))
+        w -= ALPHA * dj_dw
+        b -= ALPHA * dj_db
+
+        # Store cost
+        cost = c(X, y, w, b)
+        cost_history.append(cost)
+
+        # Print cost every 10% of iterations
+        if i % (ITERATIONS // 10) == 0:
+            print(f"Iteration {i:6d}: Cost {cost:.6f}")
+
+    return w, b, cost_history
+# ------------------------------------------------
+
+# Initialize weights and bias
+m = X_train.shape[1]  # Number of features
+w = np.zeros(m)  # Initialize weights
+b = 0  # Initialize bias
+
+# Train the model
+w, b, cost_history = grad_desc(X_scaled, Y_train, w, b)
+
+# Print final weights and bias
+print("\nOptimized Weights:", w)
+print("Optimized Bias:", b)
+
+# --------------- Undo Scaling for Weights & Bias ---------------
+def unscale_y(scaled_y, y_mean, y_std):
+    return scaled_y * y_std + y_mean
+
+# Convert scaled weights back to original scale
+w_unscaled = w * (y_std / std)  # Adjust for feature scaling
+
+# Correct Bias Scaling
+b_unscaled = y_mean - np.dot(mean / std, w_unscaled)
+
+print("\nUnscaled Weights:", w_unscaled)
+print("Unscaled Bias:", b_unscaled)
+# ------------------------------------------------
+
+# --------------- Prediction Function ---------------
+def predict(X_input):
+    X_input_scaled = (X_input - mean) / std  # Apply same scaling as training
+    scaled_prediction = f(X_input_scaled, w, b)  # Get scaled prediction
+    return unscale_y(scaled_prediction, y_mean, y_std)  # Convert back
+
+# --------------- Take User Input for Prediction ---------------
+while(1):
+    inp = np.array(input("Enter feature values (comma-separated): ").split(','), dtype=float)
+
+    if(inp[0] == "end"): break
+
+    # Ensure correct number of features
+    if len(inp) != m:
+        print(f"Error: Expected {m} features, but got {len(inp)}")
+    else:
+        print("Estimated price: ", predict(inp))
