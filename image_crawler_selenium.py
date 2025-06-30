@@ -65,7 +65,7 @@ def download_images_with_selenium(url, download_dir='downloaded_images', delay_s
                 img_path = os.path.join(download_dir, img_name)
 
                 if os.path.exists(img_path):
-                    print(f"  이미 존재하여 건너뜜: {img_name}")
+                    print(f"  이미 존재하여 건너뜀: {img_name}")
                     continue
 
                 # Selenium을 사용했으므로 requests.get() 대신 실제 브라우저가 직접 이미지 파일을 다운로드하도록 할 수 있습니다.
