@@ -20,8 +20,11 @@ def download_images_from_url(url, download_dir='downloaded_images', delay_second
         os.makedirs(download_dir)
 
     print(f"[{url}]에서 이미지 수집 시작...")
+
+    headers = {}
+    headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
     try:
-        response = requests.get(url, timeout=10) # 10초 타임아웃 설정
+        response = requests.get(url, timeout=10, headers=headers) # 10초 타임아웃 설정
         response.raise_for_status() # HTTP 오류 발생 시 예외 발생
     except requests.exceptions.RequestException as e:
         print(f"URL 접속 오류: {e}")
