@@ -14,15 +14,18 @@ Args:
 Returns:
     int: 다운로드된 이미지의 개수. 오류 발생 시 -1 반환.
 """
-def download_images_from_url(url, download_dir='downloaded_images', delay_seconds=1, max_images=None):
+def download_images_from_url(url, download_dir='downloaded_images', delay_seconds=1, max_images=None, headers=None):
     downloaded_images = 0
     if not os.path.exists(download_dir):
         os.makedirs(download_dir)
 
     print(f"[{url}]에서 이미지 수집 시작...")
 
-    headers = {}
-    headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
+    if headers is None:
+        headers = {
+            'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
+        }
+
     try:
         response = requests.get(url, timeout=10, headers=headers) # 10초 타임아웃 설정
         response.raise_for_status() # HTTP 오류 발생 시 예외 발생
