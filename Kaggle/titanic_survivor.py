@@ -59,15 +59,16 @@ X_test = test_df.values
 
 # define model
 model = tf.keras.Sequential([
-    tf.keras.layers.Dense(64, activation='relu', input_shape=(X_train.shape[1],)),
-    tf.keras.layers.Dense(32, activation='relu'),
+    tf.keras.layers.Dense(128, activation='relu', input_shape=(X_train.shape[1],)),
+    tf.keras.layers.Dense(64, activation='relu'),
+    tf.keras.layers.Dense(64, activation='relu'),
     tf.keras.layers.Dense(1, activation='sigmoid')  # 이진 분류
 ])
 
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
 # Train the model
-history = model.fit(X_train, y_train, epochs=10, batch_size=32, validation_split=0.2)
+history = model.fit(X_train, y_train, epochs=100, batch_size=32, validation_split=0.2)
 
 predictions_prob = model.predict(X_test)
 predictions_binary = (predictions_prob > 0.5).astype(int)
@@ -81,25 +82,25 @@ submission_df = pd.DataFrame({
 submission_df.to_csv('Kaggle/submission.csv', index=False)
 
 
-# # 훈련 손실과 검증 손실 시각화
-# plt.figure(figsize=(12, 5))
+# 훈련 손실과 검증 손실 시각화
+plt.figure(figsize=(12, 5))
 
-# plt.subplot(1, 2, 1)
-# plt.plot(history.history['loss'], label='Train Loss')
-# plt.plot(history.history['val_loss'], label='Validation Loss')
-# plt.title('Loss over Epochs')
-# plt.xlabel('Epoch')
-# plt.ylabel('Loss')
-# plt.legend()
+plt.subplot(1, 2, 1)
+plt.plot(history.history['loss'], label='Train Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.title('Loss over Epochs')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
 
-# # 훈련 정확도와 검증 정확도 시각화
-# plt.subplot(1, 2, 2)
-# plt.plot(history.history['accuracy'], label='Train Accuracy')
-# plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
-# plt.title('Accuracy over Epochs')
-# plt.xlabel('Epoch')
-# plt.ylabel('Accuracy')
-# plt.legend()
+# 훈련 정확도와 검증 정확도 시각화
+plt.subplot(1, 2, 2)
+plt.plot(history.history['accuracy'], label='Train Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Accuracy over Epochs')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend()
 
-# plt.tight_layout()
-# plt.show()
+plt.tight_layout()
+plt.show()
